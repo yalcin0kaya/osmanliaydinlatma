@@ -515,7 +515,7 @@
         .shop-look-section { width: 100%; position: relative; padding: 0 0 10px; }
         .shop-look-viewport { overflow: hidden; cursor: grab; -webkit-overflow-scrolling: touch; }
         .shop-look-viewport.dragging { cursor: grabbing; }
-        .shop-look-track { display: flex; gap: 0; transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1); will-change: transform; }
+        .shop-look-track { display: flex; gap: 0; transition: transform 0.35s cubic-bezier(0.22,0.61,0.36,1); will-change: transform; }
         .shop-look-cell { position: relative; flex: 0 0 25%; max-width: 25%; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; user-select: none; }
         .shop-look-cell img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; pointer-events: none; }
         .shop-look-cell:hover img { transform: scale(1.04); }
@@ -2750,23 +2750,42 @@
             const maxScroll = () => track.scrollWidth - vp.clientWidth;
             updateShopLookArrows(maxScroll());
             let isDown = false, startX = 0, startPos = 0, moved = false;
-            const down = (x) => { isDown = true; moved = false; startX = x; startPos = _slScrollPos; track.style.transition = 'none'; vp.classList.add('dragging'); };
+            let lastX = 0, lastT = 0, velocity = 0, momentumRAF = null;
+            const clamp = (p) => { const ms = maxScroll(); return p < 0 ? 0 : (p > ms ? ms : p); };
+            const apply = (p) => { _slScrollPos = p; track.style.transform = 'translateX(' + (-p) + 'px)'; };
+            const down = (x) => {
+                if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+                isDown = true; moved = false; startX = x; startPos = _slScrollPos;
+                lastX = x; lastT = Date.now(); velocity = 0;
+                track.style.transition = 'none'; vp.classList.add('dragging');
+            };
             const move = (x) => {
                 if (!isDown) return;
                 const dx = x - startX;
                 if (Math.abs(dx) > 5) moved = true;
-                let pos = startPos - dx;
-                const ms = maxScroll();
-                if (pos < 0) pos = 0; if (pos > ms) pos = ms;
-                _slScrollPos = pos;
-                track.style.transform = 'translateX(' + (-pos) + 'px)';
+                const now = Date.now();
+                const dt = now - lastT;
+                if (dt > 0) { velocity = (x - lastX) / dt; lastX = x; lastT = now; }
+                apply(clamp(startPos - dx));
+            };
+            const momentum = () => {
+                let v = -velocity * 18;
+                const step = () => {
+                    if (Math.abs(v) < 0.5) { momentumRAF = null; track.style.transition = ''; updateShopLookArrows(maxScroll()); return; }
+                    const np = clamp(_slScrollPos + v);
+                    apply(np);
+                    if (np === 0 || np === maxScroll()) { v = 0; }
+                    v *= 0.92;
+                    momentumRAF = requestAnimationFrame(step);
+                };
+                momentumRAF = requestAnimationFrame(step);
             };
             const up = () => {
                 if (!isDown) return;
                 isDown = false;
-                track.style.transition = '';
                 vp.classList.remove('dragging');
-                updateShopLookArrows(maxScroll());
+                if (Math.abs(velocity) > 0.15) { momentum(); }
+                else { track.style.transition = ''; updateShopLookArrows(maxScroll()); }
             };
             vp.addEventListener('mousedown', e => { e.preventDefault(); down(e.pageX); });
             window.addEventListener('mousemove', e => move(e.pageX));
