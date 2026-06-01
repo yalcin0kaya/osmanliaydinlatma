@@ -511,6 +511,34 @@
             font-size: 0.9rem;
         }
 
+        /* ===== Shop the Look ===== */
+        .shop-look-section { width: 100%; }
+        .shop-look-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+        .shop-look-cell { position: relative; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; }
+        .shop-look-cell img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
+        .shop-look-cell:hover img { transform: scale(1.04); }
+        .shop-look-cell-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0); display: flex; align-items: center; justify-content: center; transition: background 0.3s ease; }
+        .shop-look-cell-overlay span { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); color: #2c2c2c; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 300; opacity: 0; transform: scale(0.7); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .shop-look-cell:hover .shop-look-cell-overlay { background: rgba(0,0,0,0.18); }
+        .shop-look-cell:hover .shop-look-cell-overlay span { opacity: 1; transform: scale(1); }
+        @media (max-width: 768px) { .shop-look-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .sl-modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .sl-modal { background: #fff; max-width: 980px; width: 100%; max-height: 90vh; display: flex; position: relative; overflow: hidden; }
+        .sl-modal-close { position: absolute; top: 16px; right: 16px; z-index: 5; width: 36px; height: 36px; border: none; border-radius: 50%; background: rgba(255,255,255,0.9); cursor: pointer; font-size: 1.3rem; color: #2c2c2c; }
+        .sl-image-side { flex: 1.4; position: relative; background: #f5f0eb; display: flex; align-items: center; justify-content: center; min-height: 300px; }
+        .sl-image-side img { width: 100%; height: 100%; object-fit: cover; }
+        .sl-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: none; border-radius: 50%; background: rgba(255,255,255,0.92); cursor: pointer; font-size: 1.2rem; color: #2c2c2c; z-index: 3; display: flex; align-items: center; justify-content: center; }
+        .sl-nav.prev { left: 14px; }
+        .sl-nav.next { right: 14px; }
+        .sl-product-side { flex: 1; padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; min-width: 240px; }
+        .sl-product-card { text-align: center; cursor: pointer; }
+        .sl-product-card img { max-width: 180px; max-height: 220px; object-fit: contain; margin: 0 auto 18px; display: block; }
+        .sl-product-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; margin-bottom: 6px; color: #2c2c2c; }
+        .sl-product-card .sl-view-btn { display: inline-block; margin-top: 14px; padding: 10px 26px; background: #2c2c2c; color: #fff; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase; }
+        .sl-no-product { color: #999; font-size: 0.85rem; text-align: center; }
+        @media (max-width: 768px) { .sl-modal { flex-direction: column; max-height: 92vh; overflow-y: auto; } .sl-image-side { min-height: 260px; } }
+
         /* Grid Layouts */
         .grid {
             display: grid;
@@ -2537,6 +2565,7 @@
                 url: b.url,
                 mobileUrl: b.mobile_url || '',
                 position: b.position,
+                linkedProductId: b.linked_product_id || null,
             }));
         }
 
@@ -2679,6 +2708,75 @@
         function navigateTo(path) {
             history.pushState(null, '', path);
             render();
+        }
+
+        // ===== Shop the Look panel =====
+        let _shopLookItems = [];
+        let _shopLookIndex = 0;
+
+        async function openShopLook(index) {
+            const banners = await getBanners();
+            _shopLookItems = banners.filter(b => b.position === 'shop_look' && b.url);
+            if (!_shopLookItems.length) return;
+            _shopLookIndex = index || 0;
+            await renderShopLookModal();
+        }
+
+        async function renderShopLookModal() {
+            const item = _shopLookItems[_shopLookIndex];
+            if (!item) return;
+            const products = await getProducts();
+            const product = item.linkedProductId
+                ? products.find(p => String(p.id) === String(item.linkedProductId))
+                : null;
+
+            let productHTML;
+            if (product) {
+                const pName = product.name?.[currentLanguage] || product.name?.en || product.name?.tr || '';
+                const pImg = (product.images && product.images[0]) || '';
+                const slug = slugify(product.name?.en || product.name?.tr || '');
+                productHTML = `
+                    <div class="sl-product-card" onclick="closeShopLook(); navigateTo('/products/${product.id}-${slug}')">
+                        ${pImg ? `<img src="${pImg}" alt="${pName}">` : ''}
+                        <h3>${pName}</h3>
+                        <span class="sl-view-btn">${currentLanguage === 'tr' ? 'Ürünü Gör' : 'View Product'}</span>
+                    </div>`;
+            } else {
+                productHTML = `<p class="sl-no-product">${currentLanguage === 'tr' ? 'Bu görsele ürün bağlanmamış' : 'No product linked'}</p>`;
+            }
+
+            const multiple = _shopLookItems.length > 1;
+            let modal = document.getElementById('slModalOverlay');
+            const inner = `
+                <div class="sl-modal">
+                    <button class="sl-modal-close" onclick="closeShopLook()">&times;</button>
+                    <div class="sl-image-side">
+                        ${multiple ? `<button class="sl-nav prev" onclick="shopLookNav(-1)">‹</button>` : ''}
+                        <img src="${item.url}" alt="Shop the look">
+                        ${multiple ? `<button class="sl-nav next" onclick="shopLookNav(1)">›</button>` : ''}
+                    </div>
+                    <div class="sl-product-side">${productHTML}</div>
+                </div>`;
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'slModalOverlay';
+                modal.className = 'sl-modal-overlay';
+                modal.onclick = (e) => { if (e.target === modal) closeShopLook(); };
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = inner;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function shopLookNav(dir) {
+            _shopLookIndex = (_shopLookIndex + dir + _shopLookItems.length) % _shopLookItems.length;
+            renderShopLookModal();
+        }
+
+        function closeShopLook() {
+            const modal = document.getElementById('slModalOverlay');
+            if (modal) modal.remove();
+            document.body.style.overflow = '';
         }
 
         // Update SEO metadata dynamically
@@ -2886,6 +2984,7 @@
             const banners = await getBanners();
             const homeBanner = banners.find(b => b.position === 'home') || banners[0];
             const homeVideoBanner = banners.find(b => b.position === 'home_video');
+            const shopLookItems = banners.filter(b => b.position === 'shop_look' && b.url);
 
             let productsHTML = products.slice(0, 8).map(product => renderProductCard(product)).join('');
 
@@ -2906,6 +3005,18 @@
                     Admin panelinden video ekleyebilirsiniz
                 </div>
                 `}
+                ${shopLookItems.length > 0 ? `
+                <section class="shop-look-section scroll-fade">
+                    <div class="shop-look-grid">
+                        ${shopLookItems.map((item, i) => `
+                            <div class="shop-look-cell" onclick="openShopLook(${i})">
+                                <img src="${item.url}" alt="Shop the look" loading="lazy">
+                                <div class="shop-look-cell-overlay"><span>＋</span></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+                ` : ''}
                 <section class="py-80 scroll-fade">
                     <div class="container">
                         <div class="section-title">
