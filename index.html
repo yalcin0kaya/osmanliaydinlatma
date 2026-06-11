@@ -5707,15 +5707,49 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             }
 
             // Contact form handlers
-            document.getElementById('sendEmail')?.addEventListener('click', () => {
+            document.getElementById('sendEmail')?.addEventListener('click', async () => {
                 const name = document.getElementById('contactName')?.value;
                 const email = document.getElementById('contactEmail')?.value;
                 const phone = document.getElementById('contactPhone')?.value;
                 const message = document.getElementById('contactMessage')?.value;
+                const btn = document.getElementById('sendEmail');
 
-                if (name && email && message) {
-                    const mailtoLink = `mailto:osmanliaydinlatma@gmail.com?subject=Inquiry from ${name}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nMessage:\n${message}`)}`;
-                    window.location.href = mailtoLink;
+                if (!name || !email || !message) {
+                    alert(currentLanguage === 'tr' ? 'L\u00fctfen ad, e-posta ve mesaj alanlar\u0131n\u0131 doldurun.' : 'Please fill in name, email and message.');
+                    return;
+                }
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = currentLanguage === 'tr' ? 'G\u00f6nderiliyor...' : 'Sending...';
+                try {
+                    const res = await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({
+                            access_key: '8f4a43e0-942f-4d05-8b68-a13e3264ca02',
+                            subject: 'Osmanli Aydinlatma - Yeni Iletisim Mesaji',
+                            from_name: name,
+                            name: name,
+                            email: email,
+                            phone: phone || '-',
+                            message: message
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(currentLanguage === 'tr' ? 'Mesaj\u0131n\u0131z g\u00f6nderildi. Te\u015fekk\u00fcr ederiz!' : 'Your message has been sent. Thank you!');
+                        document.getElementById('contactName').value = '';
+                        document.getElementById('contactEmail').value = '';
+                        document.getElementById('contactPhone').value = '';
+                        document.getElementById('contactMessage').value = '';
+                    } else {
+                        alert(currentLanguage === 'tr' ? 'G\u00f6nderilemedi, l\u00fctfen tekrar deneyin veya WhatsApp ile yaz\u0131n.' : 'Could not send, please try again or use WhatsApp.');
+                    }
+                } catch (e) {
+                    alert(currentLanguage === 'tr' ? 'Bir hata olu\u015ftu, l\u00fctfen WhatsApp ile yaz\u0131n.' : 'An error occurred, please use WhatsApp.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
                 }
             });
 
