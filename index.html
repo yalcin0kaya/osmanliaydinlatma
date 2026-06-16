@@ -2034,21 +2034,25 @@
     <script type="application/ld+json" id="schema-org">
     {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": ["Organization", "Manufacturer"],
         "name": "Osmanlı Aydınlatma",
+        "alternateName": "Ottoman Lighting",
         "url": "https://osmanliaydinlatma.com",
         "logo": "https://osmanliaydinlatma.com/logo.png",
-        "description": "Luxury chandeliers and decorative lighting crafted with precision",
+        "description": "Turkey-based manufacturer of handcrafted Ottoman-style chandeliers, mosque lighting, brass pendant lamps and decorative metal lighting. Custom and contract lighting for mosques, hospitality, residential and heritage projects worldwide.",
+        "knowsAbout": ["Ottoman style chandeliers", "Mosque lighting", "Brass lighting", "Handcrafted chandeliers", "Custom lighting", "Heritage & restoration lighting"],
+        "areaServed": "Worldwide",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Istanbul",
+            "addressLocality": "Istanbul",
             "addressCountry": "TR"
         },
         "contactPoint": {
             "@type": "ContactPoint",
-            "telephone": "+90-555-123-4567",
-            "contactType": "Customer Service",
-            "email": "info@osmanliaydinlatma.com"
+            "telephone": "+905326681094",
+            "contactType": "Sales",
+            "email": "info@osmanliaydinlatma.com",
+            "availableLanguage": ["English", "Turkish"]
         },
         "sameAs": ["https://www.instagram.com/osmanliaydinlatma/"]
     }
@@ -3445,8 +3449,19 @@
                     "image": productImages,
                     "brand": {
                         "@type": "Brand",
-                        "name": "CHANDELIST"
+                        "name": "Osmanlı Aydınlatma"
                     },
+                    "manufacturer": {
+                        "@type": "Organization",
+                        "name": "Osmanlı Aydınlatma",
+                        "url": "https://osmanliaydinlatma.com",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "addressLocality": "Istanbul",
+                            "addressCountry": "TR"
+                        }
+                    },
+                    "countryOfOrigin": "TR",
                     "url": `https://osmanliaydinlatma.com${productUrl(product)}`,
                     "sku": product.sku || String(product.id),
                     "offers": {
@@ -3457,7 +3472,7 @@
                         "availability": "https://schema.org/InStock",
                         "seller": {
                             "@type": "Organization",
-                            "name": "CHANDELIST"
+                            "name": "Osmanlı Aydınlatma"
                         }
                     }
                 },
