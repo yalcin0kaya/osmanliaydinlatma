@@ -2492,7 +2492,8 @@
                 const banners = (window._pageBanners) || {};
                 const val = banners[key];
                 if (!val) return '';
-                if (typeof val === 'string') return val;
+                if (typeof val === 'string') return type === 'card' ? '' : val;
+                if (type === 'card') return val.card || '';
                 if (type === 'mobile') return val.mobile || val.desktop || '';
                 return val.desktop || '';
             } catch(e) { return ''; }
@@ -3354,7 +3355,7 @@
                 { key: 'table_lamp', name: t().tableLamp, image: 'https://picsum.photos/600/600?random=14' },
                 { key: 'floor_lamp', name: t().floorLamp, image: 'https://picsum.photos/600/600?random=12' },
                 { key: 'outdoor', name: t().outdoor, image: 'https://picsum.photos/600/600?random=13' },
-            ];
+            ].map(s => ({ ...s, image: getPageBanner(s.key, 'card') || s.image }));
 
             let html = `
                 <section class="hero" style="margin-top: 80px;">
@@ -5961,7 +5962,12 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             if (!list) return;
             const slot = (pg, val, type) => {
                 const url = (val && typeof val === 'object') ? (val[type]||'') : (type==='desktop' ? (val||'') : '');
-                const label = type === 'desktop' ? '🖥 Masaüstü (yatay, 1400×600)' : '📱 Mobil (dikey/kare, 800×1000)';
+                const labels = {
+                    desktop: '🖥 Masaüstü Banner (yatay, 1400×600)',
+                    mobile: '📱 Mobil Banner (dikey, 800×1000)',
+                    card: '🔲 Kategori Kartı (kare, 1×1, 600×600)'
+                };
+                const label = labels[type];
                 return `
                     <div style="flex:1;min-width:220px;">
                         <div style="font-size:0.8rem;color:#8a7d6b;margin-bottom:6px;font-weight:600;">${label}</div>
@@ -5982,6 +5988,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
                         <div style="display:flex;gap:16px;flex-wrap:wrap;">
                             ${slot(pg, val, 'desktop')}
                             ${slot(pg, val, 'mobile')}
+                            ${slot(pg, val, 'card')}
                         </div>
                         <span id="pb-msg-${pg.key}" style="color:#27ae60;font-size:0.85rem;display:none;margin-top:8px;">✓ Kaydedildi</span>
                     </div>`;
