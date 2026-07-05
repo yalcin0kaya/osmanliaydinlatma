@@ -2464,6 +2464,46 @@
             return JSON.parse(localStorage.getItem('chandelierCollections') || JSON.stringify(defaultCollections));
         }
 
+        // ===== SITE SETTINGS (Supabase, iki site ortak) =====
+        let _siteSettingsCache = null;
+        async function getSiteSettings() {
+            if (_siteSettingsCache) return _siteSettingsCache;
+            try {
+                const data = await sbFetch('/site_settings?select=key,value');
+                const map = {};
+                (data || []).forEach(row => { map[row.key] = row.value; });
+                _siteSettingsCache = map;
+                return map;
+            } catch (e) { return {}; }
+        }
+        async function saveSiteSetting(key, value) {
+            _siteSettingsCache = null;
+            const existing = await sbFetch('/site_settings?key=eq.' + encodeURIComponent(key) + '&select=key');
+            if (existing && existing.length) {
+                await sbFetch('/site_settings?key=eq.' + encodeURIComponent(key), { method: 'PATCH', body: JSON.stringify({ value, updated_at: new Date().toISOString() }) });
+            } else {
+                await sbFetch('/site_settings', { method: 'POST', body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }) });
+            }
+        }
+
+        // ===== SAYFA BANNER'LARI (site_settings üzerinden, iki site ortak) =====
+        function getPageBanner(key) {
+            try {
+                const banners = (window._pageBanners) || {};
+                return banners[key] || '';
+            } catch(e) { return ''; }
+        }
+        const PAGE_BANNER_LIST = [
+            { key: 'lighting',    label: 'Aydınlatma (Ana Kategori)' },
+            { key: 'chandelier',  label: 'Avizeler' },
+            { key: 'sconce',      label: 'Aplikler' },
+            { key: 'table_lamp',  label: 'Masa Lambaları' },
+            { key: 'floor_lamp',  label: 'Lambaderler' },
+            { key: 'outdoor',     label: 'Dış Mekan' },
+            { key: 'lantern',     label: 'Tekli Fener' },
+            { key: 'decorative',  label: 'Dekoratif Eşya' },
+        ];
+
         function saveCollections(collections) {
             localStorage.setItem('chandelierCollections', JSON.stringify(collections));
         }
@@ -3314,7 +3354,7 @@
 
             let html = `
                 <section class="hero" style="margin-top: 80px;">
-                    <img class="hero-media" src="https://picsum.photos/1400/600?random=200" alt="${t().lighting}" loading="lazy">
+                    <img class="hero-media" src="${getPageBanner('lighting') || 'https://picsum.photos/1400/600?random=200'}" alt="${t().lighting}" loading="lazy">
                     <div class="hero-content fade-in">
                         <h1>${t().lighting}</h1>
                     </div>
@@ -3432,7 +3472,7 @@
 
             return `
                 <section class="hero" style="margin-top: 80px;">
-                    <img class="hero-media" src="https://picsum.photos/1400/600?random=300" alt="${subcatName}" loading="lazy">
+                    <img class="hero-media" src="${getPageBanner(subcategory) || 'https://picsum.photos/1400/600?random=300'}" alt="${subcatName}" loading="lazy">
                     <div class="hero-content fade-in">
                         <h1>${subcatName}</h1>
                     </div>
@@ -3464,7 +3504,7 @@
 
             return `
                 <section class="hero" style="margin-top: 80px;">
-                    <img class="hero-media" src="https://picsum.photos/1400/600?random=400" alt="${t().decorative}" loading="lazy">
+                    <img class="hero-media" src="${getPageBanner('decorative') || 'https://picsum.photos/1400/600?random=400'}" alt="${t().decorative}" loading="lazy">
                     <div class="hero-content fade-in">
                         <h1>${t().decorative}</h1>
                     </div>
@@ -4264,6 +4304,7 @@
                             <a href="#" class="admin-nav" data-section="collections">Koleksiyonlar</a>
                             <a href="#" class="admin-nav" data-section="sorting">⇅ Sıralama</a>
                             <a href="#" class="admin-nav" data-section="import">Excel Import</a>
+                            <a href="#" class="admin-nav" data-section="pagebanners">🖼 Sayfa Banner'ları</a>
                             <a href="#" class="admin-nav" data-section="visitors">📊 Ziyaretçiler</a>
                             <a href="#" class="admin-nav" data-section="settings">⚙ Ayarlar</a>
                             <a href="#" onclick="event.preventDefault(); if(confirm('Çıkış yapmak istediğinize emin misiniz?')){ sbSignOut(); window.location.hash='#/'; render(); }" style="color:#c0392b;margin-top:8px;">⏻ ${t().logout}</a>
@@ -4384,6 +4425,15 @@
                                 <button onclick="saveSortOrder()" style="padding:10px 28px;background:#2c2c2c;color:#fff;border:none;border-radius:4px;font-size:0.9rem;cursor:pointer;letter-spacing:1px;">💾 Kaydet</button>
                                 <span id="sortSaveMsg" style="display:none;color:#27ae60;font-size:0.85rem;"></span>
                             </div>
+                        </div>
+
+                        <div id="pagebanners-section" class="admin-section" style="display: none;">
+                            <h2>🖼 Sayfa Banner'ları</h2>
+                            <p style="color:#8a7d6b; font-size:0.9rem; margin-bottom:8px;">
+                                Kategori sayfalarının üst görsellerini buradan yönetin. Değişiklik <strong>her iki sitede de</strong> (Chandelist + Osmanlı) geçerli olur.<br>
+                                <strong>Önerilen boyut: 1400 × 600 px · JPG/PNG/WEBP</strong>
+                            </p>
+                            <div id="pb-list"></div>
                         </div>
 
                         <div id="visitors-section" class="admin-section" style="display: none;">
@@ -5891,6 +5941,77 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             });
             loadVisitors(_visDays);
         }
+        // ============= SAYFA BANNER YÖNETİMİ (admin) =============
+        async function loadPageBanners() {
+            const settings = await getSiteSettings();
+            const banners = settings.page_banners || {};
+            window._pageBanners = banners;
+            const list = document.getElementById('pb-list');
+            if (!list) return;
+            list.innerHTML = PAGE_BANNER_LIST.map(pg => {
+                const img = banners[pg.key] || '';
+                return `
+                    <div class="collection-admin-card" style="margin-bottom:18px;">
+                        <h3 style="margin-top:0;">${pg.label}</h3>
+                        ${img
+                            ? `<img src="${img}" alt="${pg.label}" class="collection-img-preview" style="max-height:160px;">`
+                            : `<div style="background:#f0ece6;height:140px;display:flex;align-items:center;justify-content:center;color:#aaa;margin-bottom:12px;border-radius:6px;">Şu an varsayılan görsel kullanılıyor</div>`}
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <button type="button" class="btn" onclick="uploadPageBanner('${pg.key}')">📷 Görsel Yükle</button>
+                            ${img ? `<button type="button" class="btn" onclick="removePageBanner('${pg.key}')" style="background:#fff;border:1px solid #ddd;color:#c00;">Görseli Kaldır</button>` : ''}
+                            <span id="pb-msg-${pg.key}" style="color:#27ae60;font-size:0.85rem;display:none;">✓ Kaydedildi</span>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function uploadPageBanner(key) {
+            if (typeof cloudinary === 'undefined') {
+                alert('Cloudinary yükleniyor, lütfen bekleyin.');
+                return;
+            }
+            const widget = cloudinary.createUploadWidget(
+                {
+                    cloudName: 'dcvkzpvmy',
+                    uploadPreset: 'chandelist_upload',
+                    sources: ['local', 'url'],
+                    multiple: false,
+                    resourceType: 'image',
+                    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+                    maxFileSize: 10000000,
+                },
+                async (error, result) => {
+                    if (!error && result && result.event === 'success') {
+                        const url = result.info.secure_url;
+                        const msg = document.getElementById('pb-msg-' + key);
+                        if (msg) { msg.style.display = 'inline'; msg.textContent = 'Kaydediliyor...'; msg.style.color = '#8a7d6b'; }
+                        try {
+                            const settings = await getSiteSettings();
+                            const banners = settings.page_banners || {};
+                            banners[key] = url;
+                            await saveSiteSetting('page_banners', banners);
+                            window._pageBanners = banners;
+                            if (msg) { msg.textContent = '✓ Kaydedildi'; msg.style.color = '#27ae60'; }
+                            loadPageBanners();
+                        } catch(e) {
+                            if (msg) { msg.textContent = 'Hata: ' + e.message; msg.style.color = '#c00'; }
+                        }
+                    }
+                }
+            );
+            widget.open();
+        }
+
+        async function removePageBanner(key) {
+            if (!confirm('Bu sayfanın özel banner\'ını kaldırıp varsayılana döndürmek istiyor musunuz?')) return;
+            const settings = await getSiteSettings();
+            const banners = settings.page_banners || {};
+            delete banners[key];
+            await saveSiteSetting('page_banners', banners);
+            window._pageBanners = banners;
+            loadPageBanners();
+        }
+
         async function loadVisitors(days = 1) {
             _visDays = days;
             const loading = document.getElementById('vis-loading');
@@ -5987,6 +6108,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             const path = window.location.pathname || '/';
             currentPage = path;
             trackVisit(); // ziyaretçi takibi
+            if (!window._pageBanners) { try { const s = await getSiteSettings(); window._pageBanners = s.page_banners || {}; } catch(e){ window._pageBanners = {}; } }
 
             const app = document.getElementById('app');
             // Show loading state
@@ -6077,6 +6199,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
                     document.getElementById(`${section}-section`).style.display = 'block';
                     // Sıralama sekmesi açılınca avizeyi otomatik yükle
                     if (section === 'sorting') loadSortGrid('chandelier');
+                    if (section === 'pagebanners') loadPageBanners();
                     if (section === 'visitors') loadVisitors(1);
                 });
             });
