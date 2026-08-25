@@ -3285,6 +3285,7 @@
 
         // ============= HOME PAGE =============
         async function renderHomePage() {
+            const isTr = currentLanguage === 'tr';
             const orgSchema = {
                 "@context": "https://schema.org",
                 "@type": "Organization",
@@ -3299,11 +3300,17 @@
                 "sameAs": []
             };
             updateSEO(
-                'Osmanlı Aydınlatma — Luxury Chandeliers & Decorative Lighting',
-                'Handcrafted luxury chandeliers and decorative lighting that unite contemporary design with traditional craftsmanship.',
+                isTr
+                    ? 'Osmanlı Aydınlatma — El Yapımı Avize ve Dekoratif Aydınlatma'
+                    : 'Osmanlı Aydınlatma — Handmade Ottoman Chandeliers & Decorative Lighting',
+                isTr
+                    ? '1984\'ten beri İstanbul\'daki atölyemizde pirinç ve bakır el işçiliğiyle üretilen Osmanlı tarzı avize, sarkıt, aplik ve dekoratif aydınlatma ürünleri.'
+                    : 'Ottoman-style chandeliers, pendants, sconces and decorative lighting, handcrafted in brass and copper at our Istanbul workshop since 1984.',
                 'https://res.cloudinary.com/dcvkzpvmy/image/upload/c_fill,w_1200,h_630,g_auto,q_auto,f_jpg/v1783281253/dmqqi7hmc01hh2nn6xnd.jpg',
                 orgSchema,
-                'lüks avize, dekoratif aydınlatma, kristal avize, modern avize, chandelist',
+                isTr
+                    ? 'osmanlı avize, el yapımı avize, pirinç avize, sarkıt avize, aplik, dekoratif aydınlatma, avize imalatı, özel üretim avize'
+                    : 'ottoman chandelier, handmade brass chandelier, turkish lighting manufacturer, custom pendant light, decorative lighting',
                 '/'
             );
 
@@ -3887,8 +3894,8 @@
                 '',
                 null,
                 isTr
-                    ? 'chandelist hakkında, avize imalatçısı, özel tasarım avize istanbul, 1984 avize fabrika, lüks avize üretimi'
-                    : 'about chandelist, chandelier manufacturer, custom lighting istanbul, bespoke chandelier factory',
+                    ? 'osmanlı aydınlatma hakkında, avize imalatçısı, özel tasarım avize istanbul, 1984 avize fabrika, lüks avize üretimi'
+                    : 'about osmanli aydinlatma, chandelier manufacturer, custom lighting istanbul, bespoke chandelier factory',
                 '/about'
             );
 
