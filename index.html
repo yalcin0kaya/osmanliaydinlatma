@@ -3100,6 +3100,13 @@
         }
 
         // Update SEO metadata dynamically
+        // Chandelist ve Osmanli ayni urun veritabanini paylasiyor.
+        // Urun meta metinlerinde diger markanin adi gecebiliyor; bu sitede duzelt.
+        function markaDuzelt(metin) {
+            if (!metin || typeof metin !== 'string') return metin;
+            return metin.replace(/CHANDELIST/gi, 'Osmanlı Aydınlatma');
+        }
+
         function updateSEO(title, description, imageUrl = '', productSchema = null, keywords = '', canonicalPath = '') {
             document.title = title;
 
@@ -3560,9 +3567,9 @@
             const product = products.find(p => p.id === parseInt(productId));
             if (!product) return '<section><div class="container"><h2>Product not found</h2></div></section>';
 
-            const metaTitle = product.metaTitle ? product.metaTitle[currentLanguage] : `${product.name[currentLanguage]} - Osmanlı Aydınlatma`;
-            const metaDesc = product.metaDescription ? product.metaDescription[currentLanguage] : (product.description && product.description[currentLanguage] || '');
-            const metaKeywords = product.keywords ? product.keywords[currentLanguage] : '';
+            const metaTitle = markaDuzelt(product.metaTitle ? product.metaTitle[currentLanguage] : `${product.name[currentLanguage]} - Osmanlı Aydınlatma`);
+            const metaDesc = markaDuzelt(product.metaDescription ? product.metaDescription[currentLanguage] : (product.description && product.description[currentLanguage] || ''));
+            const metaKeywords = markaDuzelt(product.keywords ? product.keywords[currentLanguage] : '');
 
             const productImages = (product.images || []).filter(Boolean);
             updateSEO(
