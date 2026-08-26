@@ -14,7 +14,7 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-CYW1YNRNN2');
+      gtag('config', 'G-CYW1YNRNN2', { send_page_view: false });
     </script>
     <!-- End Google Analytics -->
 
@@ -6265,13 +6265,14 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
         }
 
         // ============= REKLAM OLAY TAKIBI =============
-        let _lastTrackedPath = window.location.pathname;
+        let _lastTrackedPath = null;
         function trackPageView(path) {
             try {
+                const ilkAcilis = (_lastTrackedPath === null);
                 const yeniSayfa = (path !== _lastTrackedPath);
                 _lastTrackedPath = path;
                 if (!yeniSayfa) return;
-                if (window.fbq) fbq('track', 'PageView');
+                if (!ilkAcilis && window.fbq) fbq('track', 'PageView');
                 if (window.gtag) gtag('event','page_view',{page_path:path,page_title:document.title,page_location:'https://osmanliaydinlatma.com'+path});
             } catch (e) {}
         }
