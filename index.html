@@ -2476,6 +2476,7 @@
         function setLanguage(lang) {
             currentLanguage = lang;
             localStorage.setItem('language', lang);
+            try { document.documentElement.setAttribute('lang', lang); } catch (e) {}
             render();
         }
 
@@ -6267,6 +6268,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
         }
 
         // ============= REKLAM OLAY TAKIBI =============
+        try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
         let _lastTrackedPath = null;
         function trackPageView(path) {
             try {
@@ -6354,6 +6356,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             // Scroll to top
             window.scrollTo(0, 0);
 
+            try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
             trackPageView(path);
         }
 
