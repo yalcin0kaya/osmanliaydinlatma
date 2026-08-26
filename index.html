@@ -2753,7 +2753,7 @@
             return `
                 <a href="${productUrl(product)}" class="card" id="pcard-${product.id}">
                     <div class="card-image">
-                        <img src="${firstImg}" alt="${product.sku || ''}" loading="lazy" decoding="async" width="600" height="600">
+                        <img src="${firstImg}" alt="${((product.name && (product.name[currentLanguage] || product.name.en || product.name.tr)) || '').replace(/"/g,'')}" loading="lazy" decoding="async" width="600" height="600">
                         ${hasVideo ? '<div class="video-badge">▶</div>' : ''}
                         ${hasMany ? `
                             <button class="card-nav-btn card-nav-prev" onclick="cardNavImg(event,${product.id},-1,'${imgsJson}')">&#8249;</button>
@@ -2762,7 +2762,8 @@
                         ` : ''}
                     </div>
                     <div class="card-content">
-                        ${product.sku ? `<p style="font-size:0.78rem;color:#8a7d6b;font-family:monospace;margin:0;letter-spacing:0.5px;">${product.sku}</p>` : ''}
+                        <h3 style="font-size:0.95rem;font-weight:400;line-height:1.4;margin:0 0 6px;color:#2b2b2b;">${(product.name && (product.name[currentLanguage] || product.name.en || product.name.tr)) || ''}</h3>
+                        <p style="font-size:0.72rem;color:#8a7d6b;font-family:monospace;margin:0;letter-spacing:0.5px;">${product.sku || ''}</p>
                     </div>
                 </a>
             `;
@@ -2947,8 +2948,9 @@
         }
 
         function productUrl(product) {
-            const name = product.name_tr || product.name_en || '';
-            return '/products/' + product.id + '-' + slugify(name);
+            const name = (product.name && (product.name.tr || product.name.en)) || product.name_tr || product.name_en || '';
+            const s = slugify(name);
+            return '/products/' + product.id + (s ? '-' + s : '');
         }
 
         function navigateTo(path) {
@@ -3629,7 +3631,7 @@
                     }
                 },
                 metaKeywords,
-                `productUrl(product)`
+                productUrl(product)
             );
 
             trackViewContent(product);
