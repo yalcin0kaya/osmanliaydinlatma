@@ -379,6 +379,9 @@
 
         // Auto language detection (IP-based) — Osmanlı sitesi TR öncelikli
         async function initializeLanguage() {
+            // Ana sayfa disinda URL Turkcedir; icerik dili URL ile celismesin
+            const atRoot = (location.pathname || '/') === '/' || (location.pathname || '') === '';
+            if (!atRoot) { currentLanguage = 'tr'; return; }
             const savedLang = localStorage.getItem('language');
             if (savedLang) {
                 currentLanguage = savedLang;
@@ -5124,6 +5127,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             }
 
             app.innerHTML = renderHeader() + content + renderFooter();
+            try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
 
             // Attach event listeners
             attachEventListeners();
