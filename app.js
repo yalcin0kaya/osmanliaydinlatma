@@ -8,6 +8,7 @@
                 tray: 'Tepsi',
                 mirror: 'Ayna',
                 candleholder: 'Mumluk & Şamdan',
+                flushMount: 'Tavan Armatürü',
                 vase: 'Vazo & Obje',
                 planter: 'Saksı',
                 about: 'Hakkımızda',
@@ -33,6 +34,8 @@
                 tableLamp: 'Masa Lambası',
                 floorLamp: 'Lambader',
                 outdoor: 'Dış Mekan Aydınlatma',
+                lantern: 'Fener Avize',
+                pendant: 'Tekli Sarkıt Aydınlatma',
                 explore: 'Keşfet',
                 details: 'Detay',
                 material: 'Malzeme',
@@ -118,6 +121,7 @@
                 tray: 'Tray',
                 mirror: 'Mirror',
                 candleholder: 'Candleholders',
+                flushMount: 'Flush Mount Lights',
                 vase: 'Vases & Objects',
                 planter: 'Planters',
                 about: 'About',
@@ -143,6 +147,8 @@
                 tableLamp: 'Table Lamp',
                 floorLamp: 'Floor Lamp',
                 outdoor: 'Outdoor Lighting',
+                lantern: 'Lantern Chandelier',
+                pendant: 'Single Pendant Light',
                 explore: 'Explore',
                 details: 'Details',
                 material: 'Material',
@@ -484,11 +490,13 @@
         const PAGE_BANNER_LIST = [
             { key: 'lighting',    label: 'Aydınlatma (Ana Kategori)' },
             { key: 'chandelier',  label: 'Avizeler' },
+            { key: 'flush_mount', label: 'Tavan Armatürleri' },
             { key: 'sconce',      label: 'Aplikler' },
             { key: 'table_lamp',  label: 'Masa Lambaları' },
             { key: 'floor_lamp',  label: 'Lambaderler' },
             { key: 'outdoor',     label: 'Dış Mekan' },
-            { key: 'lantern',     label: 'Tekli Fener' },
+            { key: 'lantern',     label: 'Fener Avize' },
+            { key: 'pendant',     label: 'Tekli Sarkıt Aydınlatma' },
             { key: 'decorative',  label: 'Dekoratif Eşya' },
             { key: 'homedecor',   label: 'Ev Dekorasyonu (Ana Kategori)' },
             { key: 'side_table',  label: 'Yan Sehpalar' },
@@ -1219,10 +1227,13 @@
                                 <a href="/lighting" data-page="lighting">${t().lighting}</a>
                                 <div class="dropdown-menu">
                                     <a href="/lighting/chandelier">${t().chandelier}</a>
+                                    <a href="/lighting/flush_mount">${t().flushMount}</a>
                                     <a href="/lighting/sconce">${t().sconce}</a>
                                     <a href="/lighting/table_lamp">${t().tableLamp}</a>
                                     <a href="/lighting/floor_lamp">${t().floorLamp}</a>
                                     <a href="/lighting/outdoor">${t().outdoor}</a>
+                                    <a href="/lighting/lantern">${t().lantern}</a>
+                                    <a href="/lighting/pendant">${t().pendant}</a>
                                 </div>
                             </div>
                             <div class="nav-dropdown">
@@ -1443,6 +1454,7 @@
 
             const subcategories = [
                 { key: 'chandelier', name: t().chandelier, image: 'https://picsum.photos/600/600?random=10' },
+                { key: 'flush_mount', name: t().flushMount, image: 'https://picsum.photos/600/600?random=16' },
                 { key: 'sconce', name: t().sconce, image: 'https://picsum.photos/600/600?random=11' },
                 { key: 'table_lamp', name: t().tableLamp, image: 'https://picsum.photos/600/600?random=14' },
                 { key: 'floor_lamp', name: t().floorLamp, image: 'https://picsum.photos/600/600?random=12' },
@@ -1621,10 +1633,11 @@
         }
 
         // ============= LIGHTING SUBCATEGORY PAGE =============
-        async function renderLightingSubcategoryPage(subcategory) {
+        async function renderLightingSubcategoryPage(subcategory, styleFilter) {
             const subcatNames = {
-                chandelier: t().chandelier, sconce: t().sconce,
-                table_lamp: t().tableLamp, floor_lamp: t().floorLamp, outdoor: t().outdoor
+                chandelier: t().chandelier, sconce: t().sconce, flush_mount: t().flushMount,
+                table_lamp: t().tableLamp, floor_lamp: t().floorLamp, outdoor: t().outdoor,
+                lantern: t().lantern, pendant: t().pendant
             };
             const subcatName = subcatNames[subcategory] || subcategory;
             updateSEO(
@@ -1640,7 +1653,8 @@
                 '/lighting/' + subcategory
             );
 
-            const products = (await getProducts()).filter(p => parseSubcat(p.subcategory).includes(subcategory));
+            const products = (await getProducts()).filter(p => parseSubcat(p.subcategory).includes(subcategory)
+                && (!styleFilter || !p.style || p.style === styleFilter || p.style === 'both'));
 
             let productsHTML = products.map(product => renderProductCard(product)).join('');
 
@@ -2791,6 +2805,7 @@
                                 <div id="productCatFilter" style="display:flex;flex-wrap:wrap;gap:8px;">
                                     <button class="prod-cat-btn active" data-cat="all" onclick="setProductCat(this,'all')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#5a4a3a;color:#fff;font-size:0.82rem;cursor:pointer;">Tümü</button>
                                     <button class="prod-cat-btn" data-cat="chandelier" onclick="setProductCat(this,'chandelier')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#fff;color:#5a4a3a;font-size:0.82rem;cursor:pointer;">Avizeler</button>
+                                    <button class="prod-cat-btn" data-cat="flush_mount" onclick="setProductCat(this,'flush_mount')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#fff;color:#5a4a3a;font-size:0.82rem;cursor:pointer;">Tavan Armatürleri</button>
                                     <button class="prod-cat-btn" data-cat="sconce" onclick="setProductCat(this,'sconce')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#fff;color:#5a4a3a;font-size:0.82rem;cursor:pointer;">Aplikler</button>
                                     <button class="prod-cat-btn" data-cat="table_lamp" onclick="setProductCat(this,'table_lamp')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#fff;color:#5a4a3a;font-size:0.82rem;cursor:pointer;">Masa Lambaları</button>
                                     <button class="prod-cat-btn" data-cat="floor_lamp" onclick="setProductCat(this,'floor_lamp')" style="padding:6px 14px;border:1px solid #c9b99a;border-radius:20px;background:#fff;color:#5a4a3a;font-size:0.82rem;cursor:pointer;">Lambaderler</button>
@@ -2870,6 +2885,7 @@
 
                             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;" id="sortCatTabs">
                                 <button class="sort-cat-btn active" data-cat="chandelier" onclick="loadSortGrid('chandelier')">Avizeler</button>
+                                <button class="sort-cat-btn" data-cat="flush_mount" onclick="loadSortGrid('flush_mount')">Tavan Armatürleri</button>
                                 <button class="sort-cat-btn" data-cat="sconce" onclick="loadSortGrid('sconce')">Aplikler</button>
                                 <button class="sort-cat-btn" data-cat="table_lamp" onclick="loadSortGrid('table_lamp')">Masa Lambaları</button>
                                 <button class="sort-cat-btn" data-cat="floor_lamp" onclick="loadSortGrid('floor_lamp')">Lambaderler</button>
@@ -3102,10 +3118,13 @@
 
             const subcategoryOptions = [
                 { value: 'chandelier', label: 'Avize' },
+                { value: 'flush_mount', label: 'Tavan Armatürü (Plafonyer)' },
                 { value: 'sconce', label: 'Aplik' },
                 { value: 'table_lamp', label: 'Masa Lambası' },
                 { value: 'floor_lamp', label: 'Lambader' },
                 { value: 'outdoor', label: 'Dış Mekan Aydınlatma' },
+                { value: 'lantern', label: 'Fener Avize' },
+                { value: 'pendant', label: 'Tekli Sarkıt Aydınlatma' },
                 { value: 'side_table', label: 'Yan Sehpa' },
                 { value: 'tray', label: 'Tepsi' },
                 { value: 'mirror', label: 'Ayna' },
@@ -3230,7 +3249,7 @@
                                         }).join('')}
                                     </div>
                                 </div>
-                                <div class="form-group" id="styleFieldGroup" style="display:${product && parseSubcat(product.subcategory).includes('chandelier') ? 'block' : 'none'};">
+                                <div class="form-group" id="styleFieldGroup" style="display:${product && (parseSubcat(product.subcategory).includes('chandelier') || parseSubcat(product.subcategory).includes('flush_mount')) ? 'block' : 'none'};">
                                     <label>Koleksiyon (Avize Stili)</label>
                                     <select id="formStyle">
                                         <option value="modern" ${product && product.style === 'modern' ? 'selected' : ''}>Modern Avize</option>
@@ -3813,7 +3832,7 @@ JSON formatında yanıt ver (başka hiçbir şey yazma):
                 sku: document.getElementById('formSku').value,
                 category: document.getElementById('formCategory').value,
                 subcategory: Array.from(document.querySelectorAll('input[name="subcategoryCheck"]:checked')).map(cb => cb.value),
-                style: document.querySelector('input[name="subcategoryCheck"][value="chandelier"]:checked') ? document.getElementById('formStyle').value : null,
+                style: (document.querySelector('input[name="subcategoryCheck"][value="chandelier"]:checked') || document.querySelector('input[name="subcategoryCheck"][value="flush_mount"]:checked')) ? document.getElementById('formStyle').value : null,
                 price: document.getElementById('formPrice').value,
                 materials: document.getElementById('formMaterials').value,
                 dimensions: document.getElementById('formDimensions').value,
@@ -4286,7 +4305,8 @@ Urun hazirsa cevabinin SONUNA su bloku ekle (once kisa bir Turkce ozet cumlesi y
         function toggleStyleField() {
             const styleGroup = document.getElementById('styleFieldGroup');
             if (!styleGroup) return;
-            const chandelierChecked = !!document.querySelector('input[name="subcategoryCheck"][value="chandelier"]:checked');
+            const chandelierChecked = !!document.querySelector('input[name="subcategoryCheck"][value="chandelier"]:checked')
+                || !!document.querySelector('input[name="subcategoryCheck"][value="flush_mount"]:checked');
             styleGroup.style.display = chandelierChecked ? 'block' : 'none';
         }
 
@@ -5188,6 +5208,8 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
                     content = await renderLightingPage();
                 } else if (path === '/lighting/chandelier') {
                     content = await renderChandelierPage();
+                } else if (path.startsWith('/lighting/flush_mount/')) {
+                    content = await renderLightingSubcategoryPage('flush_mount', path.split('/')[3]);
                 } else if (path.startsWith('/lighting/chandelier/')) {
                     const style = path.split('/')[3];
                     content = await renderChandelierStylePage(style);
