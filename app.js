@@ -689,6 +689,17 @@
             try { const p = JSON.parse(val); return Array.isArray(p) ? p : [val]; } catch { return [val]; }
         }
 
+        // ---- Cloudinary olcu donusturucu (buyuk orijinal yerine kart boyu) ----
+        function clImg(u, w) {
+            u = u || '';
+            if (!u || u.indexOf('res.cloudinary.com') === -1 || u.indexOf('/upload/') === -1) return u;
+            u = u.split('?')[0];
+            const i = u.indexOf('/upload/') + 8;
+            const seg = u.slice(i).split('/')[0];
+            if (/^(w_|h_|c_|q_|f_|e_|ar_|dpr_)/.test(seg)) return u;
+            return u.slice(0, i) + 'w_' + w + ',q_auto,f_auto/' + u.slice(i);
+        }
+
         // ---- Kart resim navigasyonu ----
         const _cardIdx = {};
         function cardNavImg(e, productId, dir, imagesJson) {
@@ -700,7 +711,7 @@
             const card = document.getElementById('pcard-' + productId);
             if (!card) return;
             const img = card.querySelector('.card-image img');
-            if (img) img.src = images[_cardIdx[productId]];
+            if (img) img.src = clImg(images[_cardIdx[productId]], 600);
             card.querySelectorAll('.card-dot').forEach((dot, i) => {
                 dot.classList.toggle('active', i === _cardIdx[productId]);
             });
@@ -718,7 +729,7 @@
             return `
                 <a href="${productUrl(product)}" class="card" id="pcard-${product.id}">
                     <div class="card-image">
-                        <img src="${firstImg}" alt="${((product.name && (product.name[currentLanguage] || product.name.en || product.name.tr)) || '').replace(/"/g,'')}" loading="lazy" decoding="async" width="600" height="600">
+                        <img src="${clImg(firstImg,600)}" alt="${((product.name && (product.name[currentLanguage] || product.name.en || product.name.tr)) || '').replace(/"/g,'')}" loading="lazy" decoding="async" width="600" height="600">
                         ${hasVideo ? '<div class="video-badge">▶</div>' : ''}
                         ${hasMany ? `
                             <button class="card-nav-btn card-nav-prev" onclick="cardNavImg(event,${product.id},-1,'${imgsJson}')">&#8249;</button>
@@ -1077,7 +1088,7 @@
                 const slug = slugify(product.name?.en || product.name?.tr || '');
                 productHTML = `
                     <div class="sl-product-card" onclick="closeShopLook(); navigateTo('/products/${product.id}-${slug}')">
-                        ${pImg ? `<img src="${pImg}" alt="${pName}">` : ''}
+                        ${pImg ? `<img src="${clImg(pImg,600)}" alt="${pName}">` : ''}
                         <h3>${pName}</h3>
                         <span class="sl-view-btn">${currentLanguage === 'tr' ? 'Ürünü Gör' : 'View Product'}</span>
                     </div>`;
@@ -1092,7 +1103,7 @@
                     <button class="sl-modal-close" onclick="closeShopLook()">&times;</button>
                     <div class="sl-image-side">
                         ${multiple ? `<button class="sl-nav prev" onclick="shopLookNav(-1)">‹</button>` : ''}
-                        <img src="${item.url}" alt="Shop the look">
+                        <img src="${clImg(item.url,900)}" alt="Shop the look">
                         ${multiple ? `<button class="sl-nav next" onclick="shopLookNav(1)">›</button>` : ''}
                     </div>
                     <div class="sl-product-side">${productHTML}</div>
@@ -1404,7 +1415,7 @@
                         <div class="shop-look-track" id="shopLookTrack">
                             ${shopLookItems.map((item, i) => `
                                 <div class="shop-look-cell" onclick="openShopLook(${i})">
-                                    <img src="${item.url}" alt="Shop the look" loading="lazy" draggable="false">
+                                    <img src="${clImg(item.url,900)}" alt="Shop the look" loading="lazy" draggable="false">
                                     <div class="shop-look-cell-overlay"><span>＋</span></div>
                                 </div>
                             `).join('')}
@@ -1478,7 +1489,7 @@
                 html += `
                     <a href="/lighting/${sub.key}" class="card">
                         <div class="card-image">
-                            <img src="${sub.image}" alt="${sub.name}" loading="lazy">
+                            <img src="${clImg(sub.image,800)}" alt="${sub.name}" loading="lazy">
                         </div>
                         <div class="card-content">
                             <h3>${sub.name}</h3>
@@ -1512,7 +1523,7 @@
                 <a href="/lighting/chandelier/${col.key}" class="collection-banner-link">
                     <div class="collection-banner">
                         ${gorsel
-                            ? `<img src="${gorsel}" alt="${col.title[currentLanguage]}" loading="lazy">`
+                            ? `<img src="${clImg(gorsel,800)}" alt="${col.title[currentLanguage]}" loading="lazy">`
                             : `<div class="collection-banner-placeholder" style="background:linear-gradient(135deg,#3a332b 0%,#241f1a 100%);"></div>`}
                         <div class="collection-banner-content">
                             <h2>${col.title[currentLanguage]}</h2>
@@ -1555,7 +1566,7 @@
                 <a href="/lighting/chandelier/${col.key}" class="collection-banner-link">
                     <div class="collection-banner">
                         ${col.image
-                            ? `<img src="${col.image}" alt="${col.title[currentLanguage]}" loading="lazy">`
+                            ? `<img src="${clImg(col.image,800)}" alt="${col.title[currentLanguage]}" loading="lazy">`
                             : `<div class="collection-banner-placeholder" style="background:linear-gradient(135deg,#3a332b 0%,#241f1a 100%);"></div>`
                         }
                         <div class="collection-banner-content">
@@ -1775,7 +1786,7 @@
                             ${subcategories.map(s => `
                                 <a href="/homedecor/${s.key}" class="card">
                                     <div class="card-image">
-                                        <img src="${s.image}" alt="${s.name}" loading="lazy">
+                                        <img src="${clImg(s.image,800)}" alt="${s.name}" loading="lazy">
                                     </div>
                                     <div class="card-content">
                                         <h3>${s.name}</h3>
@@ -1923,7 +1934,7 @@
                 } else {
                     return `
                         <div class="thumbnail${idx === mainMediaIdx ? ' active' : ''}" data-media-idx="${idx}" role="button" tabindex="0" aria-label="Image ${idx + 1}">
-                            <img src="${media.url}" alt="Product image" loading="lazy" decoding="async" width="100" height="100">
+                            <img src="${clImg(media.url,200)}" alt="Product image" loading="lazy" decoding="async" width="100" height="100">
                         </div>
                     `;
                 }
@@ -2105,7 +2116,7 @@
                             ${related.slice(0, 5).map(p => `
                                 <div class="card" onclick="navigateTo('/products/${p.id}-${slugify(p.name?.tr||p.name?.en||'')}') " style="cursor:pointer;">
                                     <div class="card-image">
-                                        <img src="${p.images[0] || 'https://picsum.photos/600/600?random=' + p.id}" alt="${p.name[currentLanguage]}" loading="lazy" width="400" height="400">
+                                        <img src="${clImg(p.images[0],500) || 'https://picsum.photos/600/600?random=' + p.id}" alt="${p.name[currentLanguage]}" loading="lazy" width="400" height="400">
                                     </div>
                                     <div class="card-content">
                                         <h3>${p.name[currentLanguage]}</h3>
@@ -2155,7 +2166,7 @@
                     ${results.map(p => `
                         <div class="card" onclick="navigateTo('/products/${p.id}-${slugify(p.name?.tr||p.name?.en||'')}') " style="cursor:pointer;">
                             <div class="card-image">
-                                <img src="${p.images[0] || 'https://picsum.photos/600/600?random=' + p.id}" alt="${p.name[currentLanguage]}" loading="lazy" width="400" height="400">
+                                <img src="${clImg(p.images[0],500) || 'https://picsum.photos/600/600?random=' + p.id}" alt="${p.name[currentLanguage]}" loading="lazy" width="400" height="400">
                             </div>
                             <div class="card-content">
                                 <h3>${p.name[currentLanguage]}</h3>
