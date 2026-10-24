@@ -689,6 +689,50 @@
             try { const p = JSON.parse(val); return Array.isArray(p) ? p : [val]; } catch { return [val]; }
         }
 
+        // ---- Sayfa bazli siralama ----
+        const SIRA_SAYFALAR = [
+            { k: '/lighting/chandelier/modern',       ad: 'Modern Avize',               sub: 'chandelier',   stil: 'modern' },
+            { k: '/lighting/chandelier/traditional',  ad: 'Fas-Osmanlı Avize',          sub: 'chandelier',   stil: 'traditional' },
+            { k: '/lighting/chandelier',              ad: 'Avize (tüm sayfa)',          sub: 'chandelier' },
+            { k: '/lighting/flush_mount/modern',      ad: 'Modern Tavan Armatürü',      sub: 'flush_mount',  stil: 'modern' },
+            { k: '/lighting/flush_mount/traditional', ad: 'Fas-Osmanlı Tavan Armatürü', sub: 'flush_mount',  stil: 'traditional' },
+            { k: '/lighting/sconce',                  ad: 'Aplik',                      sub: 'sconce' },
+            { k: '/lighting/table_lamp',              ad: 'Masa Lambası',               sub: 'table_lamp' },
+            { k: '/lighting/floor_lamp',              ad: 'Lambader',                   sub: 'floor_lamp' },
+            { k: '/lighting/outdoor',                 ad: 'Dış Mekan',                  sub: 'outdoor' },
+            { k: '/lighting/lantern',                 ad: 'Fener Avize',                sub: 'lantern' },
+            { k: '/lighting/pendant',                 ad: 'Tekli Sarkıt Aydınlatma',    sub: 'pendant' },
+            { k: '/homedecor/side_table',             ad: 'Yan Sehpa',                  sub: 'side_table' },
+            { k: '/homedecor/tray',                   ad: 'Tepsi',                      sub: 'tray' },
+            { k: '/homedecor/candleholder',           ad: 'Mumluk',                     sub: 'candleholder' },
+            { k: '/homedecor/mirror',                 ad: 'Ayna',                       sub: 'mirror' },
+            { k: '/homedecor/planter',                ad: 'Saksı',                      sub: 'planter' }
+        ];
+
+        function _siraYukle(s) {
+            let o = s && s.sayfa_sira;
+            if (typeof o === 'string') { try { o = JSON.parse(o); } catch (e) { o = {}; } }
+            window._pageOrders = o || {};
+        }
+
+        // Kaydedilmis sayfa sirasini uygular; listede olmayan urunler sona, eski sort_order'a gore
+        function siraUygula(list, sayfa) {
+            const d = (window._pageOrders || {})[sayfa];
+            if (!d || !d.length) return list;
+            const pos = {};
+            d.forEach((id, i) => { pos[id] = i; });
+            return list.slice().sort((a, b) => {
+                const pa = pos[a.id] !== undefined ? pos[a.id] : 10000 + (a.sort_order || 999);
+                const pb = pos[b.id] !== undefined ? pos[b.id] : 10000 + (b.sort_order || 999);
+                return pa - pb;
+            });
+        }
+
+        function siraFiltre(all, s) {
+            return all.filter(p => parseSubcat(p.subcategory).includes(s.sub)
+                && (!s.stil || !p.style || p.style === s.stil || p.style === 'both'));
+        }
+
         // ---- Cloudinary olcu donusturucu (buyuk orijinal yerine kart boyu) ----
         function clImg(u, w) {
             u = u || '';
@@ -1609,7 +1653,7 @@
 
             const allProducts = await getProducts();
             const hasSubcat = (p, key) => parseSubcat(p.subcategory).includes(key);
-            const products = allProducts.filter(p => hasSubcat(p, 'chandelier') && (p.style === style || (!p.style && style === 'modern')));
+            const products = siraUygula(allProducts.filter(p => hasSubcat(p, 'chandelier') && (p.style === style || (!p.style && style === 'modern'))), '/lighting/chandelier/' + style);
 
             const productsHTML = products.length > 0
                 ? products.map(product => renderProductCard(product)).join('')
@@ -1664,8 +1708,9 @@
                 '/lighting/' + subcategory
             );
 
-            const products = (await getProducts()).filter(p => parseSubcat(p.subcategory).includes(subcategory)
-                && (!styleFilter || !p.style || p.style === styleFilter || p.style === 'both'));
+            const products = siraUygula((await getProducts()).filter(p => parseSubcat(p.subcategory).includes(subcategory)
+                && (!styleFilter || !p.style || p.style === styleFilter || p.style === 'both')),
+                '/lighting/' + subcategory + (styleFilter ? '/' + styleFilter : ''));
 
             let productsHTML = products.map(product => renderProductCard(product)).join('');
 
@@ -1823,9 +1868,9 @@
                 '/homedecor/' + subcategory
             );
 
-            const products = (await getProducts()).filter(
+            const products = siraUygula((await getProducts()).filter(
                 p => p.category === 'homedecor' && parseSubcat(p.subcategory).includes(subcategory)
-            );
+            ), '/homedecor/' + subcategory);
 
             return `
                 <section class="hero" style="margin-top: 80px;">
@@ -2894,21 +2939,10 @@
                             <h2 style="margin-bottom:6px;">Sayfa Sıralaması</h2>
                             <p style="color:#8a7d6b;font-size:0.85rem;margin-bottom:24px;">Ürünleri sürükleyip bırakarak sırayı değiştir, ardından Kaydet butonuna bas.</p>
 
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;" id="sortCatTabs">
-                                <button class="sort-cat-btn active" data-cat="chandelier" onclick="loadSortGrid('chandelier')">Avizeler</button>
-                                <button class="sort-cat-btn" data-cat="flush_mount" onclick="loadSortGrid('flush_mount')">Tavan Armatürleri</button>
-                                <button class="sort-cat-btn" data-cat="sconce" onclick="loadSortGrid('sconce')">Aplikler</button>
-                                <button class="sort-cat-btn" data-cat="table_lamp" onclick="loadSortGrid('table_lamp')">Masa Lambaları</button>
-                                <button class="sort-cat-btn" data-cat="floor_lamp" onclick="loadSortGrid('floor_lamp')">Lambaderler</button>
-                                <button class="sort-cat-btn" data-cat="outdoor" onclick="loadSortGrid('outdoor')">Dış Mekan</button>
-                                <button class="sort-cat-btn" data-cat="decorative" onclick="loadSortGrid('decorative')">Dekoratif</button>
-                                <button class="sort-cat-btn" data-cat="homedecor" onclick="loadSortGrid('homedecor')">Ev Dekorasyonu</button>
-                                <button class="sort-cat-btn" data-cat="side_table" onclick="loadSortGrid('side_table')">Yan Sehpalar</button>
-                                <button class="sort-cat-btn" data-cat="tray" onclick="loadSortGrid('tray')">Tepsiler</button>
-                                <button class="sort-cat-btn" data-cat="mirror" onclick="loadSortGrid('mirror')">Aynalar</button>
-                                <button class="sort-cat-btn" data-cat="candleholder" onclick="loadSortGrid('candleholder')">Mumluklar</button>
-                                <button class="sort-cat-btn" data-cat="vase" onclick="loadSortGrid('vase')">Vazolar</button>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="sortCatTabs">
+                                ${SIRA_SAYFALAR.map((s, i) => `<button class="sort-cat-btn${i === 0 ? ' active' : ''}" data-cat="${s.k}" onclick="loadSortGrid('${s.k}')">${s.ad}</button>`).join('')}
                             </div>
+                            <p style="font-size:0.8rem;color:#8a7d6b;margin:0 0 18px;">Her sekme sitedeki bir sayfadır; sırası ayrı tutulur, diğer sayfaları etkilemez.</p>
 
                             <div id="sortGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;min-height:200px;padding:16px;background:#faf8f5;border-radius:8px;border:2px dashed #e8e0d5;">
                                 <p style="color:#aaa;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:40px 0;">Yükleniyor...</p>
@@ -5203,7 +5237,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             const path = window.location.pathname || '/';
             currentPage = path;
             trackVisit(); // ziyaretçi takibi
-            if (!window._pageBanners) { try { const s = await getSiteSettings(); window._pageBanners = s.page_banners || {}; window._workshopGallery = s.workshop_gallery || []; window._workshopVideo = s.workshop_video || ''; } catch(e){ window._pageBanners = {}; } }
+            if (!window._pageBanners) { try { const s = await getSiteSettings(); window._pageBanners = s.page_banners || {}; _siraYukle(s); window._workshopGallery = s.workshop_gallery || []; window._workshopVideo = s.workshop_video || ''; } catch(e){ window._pageBanners = {}; } }
             if (!window._koleksiyonlar) { await koleksiyonlariYukle(); }
 
             const app = document.getElementById('app');
@@ -5307,7 +5341,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
                     document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
                     document.getElementById(`${section}-section`).style.display = 'block';
                     // Sıralama sekmesi açılınca avizeyi otomatik yükle
-                    if (section === 'sorting') loadSortGrid('chandelier');
+                    if (section === 'sorting') loadSortGrid(SIRA_SAYFALAR[0].k);
                     if (section === 'workshop') loadWorkshop();
                     if (section === 'pagebanners') loadPageBanners();
                     if (section === 'visitors') loadVisitors(1);
@@ -5679,22 +5713,23 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
         let _sortable = null;
         let _sortProducts = [];
 
-        async function loadSortGrid(subcat) {
-            // Tab aktif
+        async function loadSortGrid(sayfa) {
+            const s = SIRA_SAYFALAR.find(x => x.k === sayfa) || SIRA_SAYFALAR[0];
+            sayfa = s.k;
+            window._aktifSiraSayfa = sayfa;
             document.querySelectorAll('.sort-cat-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.cat === subcat);
+                b.classList.toggle('active', b.dataset.cat === sayfa);
             });
             const grid = document.getElementById('sortGrid');
             if (!grid) return;
             grid.innerHTML = '<p style="color:#aaa;font-size:0.85rem;grid-column:1/-1;text-align:center;padding:40px 0;">Yükleniyor...</p>';
 
+            try { _siraYukle(await getSiteSettings()); } catch (e) {}
             const all = await getProducts();
-            if (subcat === 'decorative' || subcat === 'homedecor') {
-                _sortProducts = all.filter(p => p.category === subcat);
-            } else {
-                _sortProducts = all.filter(p => parseSubcat(p.subcategory).includes(subcat));
+            _sortProducts = siraUygula(siraFiltre(all, s), sayfa);
+            if (!((window._pageOrders || {})[sayfa] || []).length) {
+                _sortProducts.sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
             }
-            _sortProducts.sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
 
             grid.innerHTML = _sortProducts.map(p => `
                 <div class="sort-item" data-id="${p.id}">
@@ -5754,28 +5789,27 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             const grid = document.getElementById('sortGrid');
             const msg = document.getElementById('sortSaveMsg');
             if (!grid) return;
-            const items = grid.querySelectorAll('.sort-item');
-            const updates = Array.from(items).map((el, i) => ({ id: parseInt(el.dataset.id), sort_order: i + 1 }));
+            const sayfa = window._aktifSiraSayfa || SIRA_SAYFALAR[0].k;
+            const ids = Array.from(grid.querySelectorAll('.sort-item')).map(el => parseInt(el.dataset.id));
 
             msg.style.display = 'inline';
             msg.style.color = '#8a7d6b';
             msg.textContent = 'Kaydediliyor...';
 
             let ok = true;
-            for (const u of updates) {
-                const r = await fetch(`${SB_URL}/products?id=eq.${u.id}`, {
-                    method: 'PATCH',
-                    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                    body: JSON.stringify({ sort_order: u.sort_order })
-                });
-                if (!r.ok) { ok = false; break; }
-            }
+            try {
+                const s = await getSiteSettings();
+                let hepsi = s.sayfa_sira;
+                if (typeof hepsi === 'string') { try { hepsi = JSON.parse(hepsi); } catch (e) { hepsi = {}; } }
+                hepsi = hepsi || {};
+                hepsi[sayfa] = ids;
+                await saveSiteSetting('sayfa_sira', hepsi);
+                window._pageOrders = hepsi;
+            } catch (e) { ok = false; }
 
             msg.style.color = ok ? '#27ae60' : '#e74c3c';
-            msg.textContent = ok ? '✓ Kaydedildi!' : '✗ Hata oluştu';
+            msg.textContent = ok ? '✓ Kaydedildi — sadece bu sayfa' : '✗ Hata oluştu';
             setTimeout(() => { msg.style.display = 'none'; }, 3000);
-
-            // Cache'i temizle ki yeni sıra yüklensin
             window._productsCache = null;
         }
 
