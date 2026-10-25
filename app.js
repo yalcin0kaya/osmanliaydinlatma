@@ -384,7 +384,11 @@
         const t = () => translations[currentLanguage];
 
         // Auto language detection (IP-based) — Osmanlı sitesi TR öncelikli
+        function urlLang() { return /^\/en(\/|$)/.test(location.pathname || '') ? 'en' : null; }
+        function stripLangPrefix(p) { return (p || '/').replace(/^\/en(?=\/|$)/, '') || '/'; }
         async function initializeLanguage() {
+            const fromUrl = urlLang();
+            if (fromUrl) { currentLanguage = fromUrl; try { localStorage.setItem('language', fromUrl); } catch (e) {} return; }
             // Ana sayfa disinda URL Turkcedir; icerik dili URL ile celismesin
             const atRoot = (location.pathname || '/') === '/' || (location.pathname || '') === '';
             if (!atRoot) { currentLanguage = 'tr'; return; }
@@ -5464,7 +5468,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
         }
 
         async function render() {
-            const path = window.location.pathname || '/';
+            const path = stripLangPrefix(window.location.pathname || '/');
             currentPage = path;
             trackVisit(); // ziyaretçi takibi
             if (!window._pageBanners || !window._urunKoleksiyonlari) { try { const s = await getSiteSettings(); window._pageBanners = s.page_banners || {}; _siraYukle(s); _kolYukle(s); window._workshopGallery = s.workshop_gallery || []; window._workshopVideo = s.workshop_video || ''; } catch(e){ window._pageBanners = {}; } }
