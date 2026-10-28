@@ -1,1 +1,20 @@
+# --- Eski OpenCart adresleri (Google'da duran linkler) -> yeni sayfalar ---
+/index.php  route=common/home  /  301!
+/index.php  route=information/contact  /contact  301!
+/index.php  route=information/information  /about  301!
+/index.php  path=62  /lighting/chandelier  301!
+/index.php  path=60_69  /lighting/pendant  301!
+/index.php  path=60  /lighting/pendant  301!
+/index.php  path=59_81  /lighting/pendant  301!
+/index.php  path=59_88  /lighting  301!
+/index.php  path=59  /lighting  301!
+/index.php  product_id=480  /lighting/table_lamp  301!
+/index.php  product_id=571  /lighting/sconce  301!
+/index.php  product_id=576  /lighting/pendant  301!
+/index.php  route=product/category  /lighting  301!
+/index.php  route=product/product  /lighting  301!
+/index.php  route=product/search  /lighting  301!
+/index.php  /  301!
+/image/*  /  301!
+/catalog/*  /  301!
 /* /index.html 200
