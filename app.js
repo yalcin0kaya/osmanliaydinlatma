@@ -378,7 +378,7 @@
         ];
 
         // ============= UTILITIES =============
-        let currentLanguage = 'en';
+        let currentLanguage = /^\/en(\/|$)/.test(location.pathname || '') ? 'en' : 'tr';
         let currentPage = '/';
 
         const t = () => translations[currentLanguage];
@@ -410,6 +410,12 @@
         }
 
         function setLanguage(lang) {
+            // URL dille uyumlu olsun: /en/... <-> /...
+            try {
+                const bare = stripLangPrefix(location.pathname);
+                const target = lang === 'en' ? ('/en' + (bare === '/' ? '/' : bare)) : bare;
+                if (target !== location.pathname) { localStorage.setItem('language', lang); location.href = target + location.search + location.hash; return; }
+            } catch (e) {}
             currentLanguage = lang;
             localStorage.setItem('language', lang);
             try { document.documentElement.setAttribute('lang', lang); } catch (e) {}
@@ -1005,12 +1011,24 @@
         }
 
         function productUrl(product) {
-            const name = (product.name && (product.name.tr || product.name.en)) || product.name_tr || product.name_en || '';
+            const name = (product.name && (product.name.en || product.name.tr)) || product.name_en || product.name_tr || '';
             const s = slugify(name);
             return '/products/' + product.id + (s ? '-' + s : '');
         }
 
+
+        // EN modunda site ici linkler /en altinda kalsin
+        function enPath(p) {
+            if (currentLanguage !== 'en' || !p || p[0] !== '/' || p.startsWith('//')) return p;
+            if (/^\/en(\/|$|\?|#)/.test(p) || /^\/(admin|api|\.netlify)(\/|$)/.test(p) || /\.[a-z0-9]{2,5}($|\?)/i.test(p)) return p;
+            return '/en' + (p === '/' ? '/' : p);
+        }
+        function localizeLinks(root) {
+            if (currentLanguage !== 'en') return;
+            (root || document).querySelectorAll('a[href^="/"]').forEach(el => { const h = el.getAttribute('href'); const n = enPath(h); if (n !== h) el.setAttribute('href', n); });
+        }
         function navigateTo(path) {
+            path = enPath(path);
             history.pushState(null, '', path);
             render();
         }
@@ -1249,11 +1267,11 @@
             const _cp = canonicalPath || (typeof window !== 'undefined' && window.location ? window.location.pathname : '') || '/';
             const _bare = _cp.replace(/^\/en(?=\/|$)/, '') || '/';
             const _isEn = (typeof currentLanguage !== 'undefined' && currentLanguage === 'en') || /^\/en(\/|$)/.test(_cp);
-            // TR icerik -> osmanliaydinlatma.com, EN icerik -> chandelist.com/en (ana sayfalar kendi alan adinda kalir)
-            const canonicalUrl = _bare === '/' ? ('https://osmanliaydinlatma.com' + (_isEn ? '/en/' : '/')) : (_isEn ? 'https://chandelist.com/en' + _bare : 'https://osmanliaydinlatma.com' + _bare);
-            if (_bare !== '/') {
+            // TR icerik -> osmanliaydinlatma.com, EN icerik -> osmanliaydinlatma.com/en
+            const canonicalUrl = _bare === '/' ? ('https://osmanliaydinlatma.com' + (_isEn ? '/en/' : '/')) : (_isEn ? 'https://osmanliaydinlatma.com/en' + _bare : 'https://osmanliaydinlatma.com' + _bare);
+            {
                 document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(el => el.remove());
-                [['tr', 'https://osmanliaydinlatma.com' + _bare], ['en', 'https://chandelist.com/en' + _bare], ['x-default', 'https://chandelist.com/en' + _bare]].forEach(([hl, href]) => {
+                [['tr', 'https://osmanliaydinlatma.com' + _bare], ['en', 'https://osmanliaydinlatma.com/en' + _bare], ['x-default', 'https://osmanliaydinlatma.com' + _bare]].forEach(([hl, href]) => {
                     const l = document.createElement('link'); l.rel = 'alternate'; l.hreflang = hl; l.href = href; document.head.appendChild(l);
                 });
             }
@@ -5545,6 +5563,7 @@ Sadece aşağıdaki JSON'ı üret, başka hiçbir şey yazma:
             }
 
             app.innerHTML = renderHeader() + content + renderFooter();
+            try { localizeLinks(app); } catch (e) {}
             try { document.documentElement.setAttribute('lang', currentLanguage); } catch (e) {}
 
             // Attach event listeners
